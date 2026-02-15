@@ -76,7 +76,8 @@ class SimpleConvNet:
         return self.last_layer.forward(y, t)
 
     def accuracy(self, x, t, batch_size=100):
-        if t.ndim != 1 : t = np.argmax(t, axis=1)
+        if t.ndim != 1 : 
+            t = np.argmax(t, axis=1)
         
         acc = 0.0
         
@@ -90,19 +91,7 @@ class SimpleConvNet:
         return acc / x.shape[0]
 
     def numerical_gradient(self, x, t):
-        """勾配を求める（数値微分）
-
-        Parameters
-        ----------
-        x : 入力データ
-        t : 教師ラベル
-
-        Returns
-        -------
-        各層の勾配を持ったディクショナリ変数
-            grads['W1']、grads['W2']、...は各層の重み
-            grads['b1']、grads['b2']、...は各層のバイアス
-        """
+        
         loss_w = lambda w: self.loss(x, t)
 
         grads = {}
@@ -113,19 +102,7 @@ class SimpleConvNet:
         return grads
 
     def gradient(self, x, t):
-        """勾配を求める（誤差逆伝搬法）
-
-        Parameters
-        ----------
-        x : 入力データ
-        t : 教師ラベル
-
-        Returns
-        -------
-        各層の勾配を持ったディクショナリ変数
-            grads['W1']、grads['W2']、...は各層の重み
-            grads['b1']、grads['b2']、...は各層のバイアス
-        """
+        
         # forward
         self.loss(x, t)
 
@@ -139,7 +116,7 @@ class SimpleConvNet:
         for layer in layers:
             dout = layer.backward(dout)
 
-        # 設定
+
         grads = {}
         grads['W1'], grads['b1'] = self.layers['Conv1'].dW, self.layers['Conv1'].db
         grads['W2'], grads['b2'] = self.layers['Affine1'].dW, self.layers['Affine1'].db
