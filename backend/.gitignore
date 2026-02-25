@@ -20,3 +20,5 @@ backend/model/*.h5
 data/
 *.wav
 *.png
+*.npz
+*.tar.gz
