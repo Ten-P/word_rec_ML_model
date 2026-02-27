@@ -65,7 +65,7 @@ for label_name in classes:
                 except Exception as e:
                     print(f"エラースキップ: {entry.name} - {e}")
 
-# Numpy配列に変換
+
 X_data = np.array(X_list).astype(np.float32)
 y_label = np.array(y_list)
 

@@ -182,11 +182,24 @@ class CNN:
 
         return grads
     
-    #ファイルにパラメータを書き込む
+    # ファイルにパラメータを書き込む
     def save_params(self, file_name="params.pkl"):
         params = {}
+        
+        # 1. 学習した重み(W, b, gamma, beta)を保存
         for key, val in self.params.items():
             params[key] = val
+            
+        # 2. BatchNormalizationの「平均(running_mean)」と「分散(running_var)」も保存
+        # これがないと推論時(train_flg=False)に正しく計算できません
+        params['bn_mean'] = {}
+        params['bn_var'] = {}
+        
+        for key, layer in self.layers.items():
+            if "BN" in key: # レイヤ名にBNが含まれていれば
+                params['bn_mean'][key] = layer.running_mean
+                params['bn_var'][key] = layer.running_var
+
         with open(file_name, 'wb') as f:
             pickle.dump(params, f)
 
@@ -196,9 +209,11 @@ class CNN:
             
         # 1. self.params を更新
         for key, val in params.items():
-            self.params[key] = val
+            # bn_mean, bn_var は self.params ではないので除外して読み込む
+            if key not in ['bn_mean', 'bn_var']:
+                self.params[key] = val
 
-        # レイヤへの反映
+        # 2. レイヤへの重み反映 (既存のコード)
         # Conv1
         self.layers['Conv1'].W = self.params['W1']
         self.layers['Conv1'].b = self.params['b1']
@@ -220,3 +235,10 @@ class CNN:
         # Affine2
         self.layers['Affine2'].W = self.params['W4']
         self.layers['Affine2'].b = self.params['b4']
+        
+        # 3. BatchNormalizationの「平均」と「分散」を復元する (★ここが重要)
+        if 'bn_mean' in params and 'bn_var' in params:
+            for key, layer in self.layers.items():
+                if "BN" in key:
+                    layer.running_mean = params['bn_mean'][key]
+                    layer.running_var = params['bn_var'][key]

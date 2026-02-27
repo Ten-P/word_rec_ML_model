@@ -22,3 +22,4 @@ data/
 *.png
 *.npz
 *.tar.gz
+*.pkl

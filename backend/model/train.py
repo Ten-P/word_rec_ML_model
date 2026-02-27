@@ -1,3 +1,4 @@
+"""
 import os
 import numpy as np
 import librosa
@@ -18,8 +19,7 @@ t_train = data['t_train']
 t_test = data['t_test']
 classes = data['classes']
 
-# 【重要】CNN用にデータを4次元に整形 (N, 1, 128, 32)
-# すでに4次元ならこの処理は無視されますが、念のため入れておくと安全です
+
 if x_train.ndim == 3:
     x_train = x_train.reshape(-1, 1, 128, 32)
     x_test = x_test.reshape(-1, 1, 128, 32)
@@ -42,7 +42,7 @@ network = CNN(
 # ==========================
 learning_rate = 0.01
 iters_num = 20000
-
+batch_size = 100
 train_size = x_train.shape[0]
 
 iter_per_epoch = max(train_size / batch_size, 1) #データ量全体にたいしてサンプルの大きさ何個ぶんか
@@ -72,12 +72,12 @@ for i in range(iters_num):
     x_batch = x_train[batch_mask]
     t_batch = t_train[batch_mask]
     
-    # --- 1. ホワイトノイズの追加 ---
+    # ホワイトノイズの追加
     noise = np.random.randn(*x_batch.shape) * 0.01
     x_batch = x_batch + noise
 
-    # --- 2. SpecAugment (時間・周波数のマスキング) ---
-    # 周波数マスキング (Frequency Masking)
+    # SpecAugment
+    # 周波数マスキング)
     # 128ピクセル（高さ）のうち、ランダムに8ピクセル分を「無音」にする
     f_mask_width = 4
     f0 = np.random.randint(0, 128 - f_mask_width)
@@ -97,13 +97,10 @@ for i in range(iters_num):
         velocity[key] = momentum * velocity[key] - learning_rate * grad[key]
         network.params[key] += velocity[key]
 
-    # 誤差の記録
     loss = network.loss(x_batch, t_batch, train_flg=True)
     train_loss_list.append(loss)
 
-    # 1エポックごとに進捗を表示
     if i % int(iter_per_epoch) == 0:
-        # 時間がかかるので5000件くらいで評価してもOKですが、正確に見るなら全件推奨
         train_acc = network.accuracy(x_train[:2000], t_train[:2000], batch_size=batch_size)
         test_acc = network.accuracy(x_test[:2000], t_test[:2000], batch_size=batch_size)
         
@@ -113,52 +110,47 @@ for i in range(iters_num):
         print(f"Epoch {int(i/iter_per_epoch)} | Loss: {loss:.4f} | Train Acc: {train_acc:.4f} | Test Acc: {test_acc:.4f}")
         
         if test_acc > best_acc:
-            best_acc = test_acc  # 最高記録を更新！
+            best_acc = test_acc
             network.save_params("best_params.pkl")  # ファイルに保存
-            print(f"★ 最高記録更新！保存しました (Acc: {best_acc:.4f})")
-
-# (以下、保存とグラフ描画は同じ)
+            print(f"最高記録更新")
 
 
 
-"""
---- 学習開始 (LR=0.01, Iters=20000) ---
-Epoch 0 | Loss: 3.6142 | Train Acc: 0.0200 | Test Acc: 0.0195
-★ 最高記録更新！保存しました (Acc: 0.0195)
-Epoch 0 | Loss: 1.9667 | Train Acc: 0.5105 | Test Acc: 0.4975
-★ 最高記録更新！保存しました (Acc: 0.4975)
-Epoch 1 | Loss: 1.7409 | Train Acc: 0.6445 | Test Acc: 0.6200
-★ 最高記録更新！保存しました (Acc: 0.6200)
-Epoch 2 | Loss: 1.2024 | Train Acc: 0.7075 | Test Acc: 0.6735
+
+★ 最高記録更新！保存しました (Acc: 0.0400)
+Epoch 0 | Loss: 1.6565 | Train Acc: 0.5655 | Test Acc: 0.5770
+★ 最高記録更新！保存しました (Acc: 0.5770)
+Epoch 1 | Loss: 1.4662 | Train Acc: 0.6855 | Test Acc: 0.6735
 ★ 最高記録更新！保存しました (Acc: 0.6735)
-Epoch 3 | Loss: 1.1051 | Train Acc: 0.6495 | Test Acc: 0.6270
-Epoch 4 | Loss: 0.9295 | Train Acc: 0.7975 | Test Acc: 0.7525
-★ 最高記録更新！保存しました (Acc: 0.7525)
-Epoch 5 | Loss: 0.9901 | Train Acc: 0.8035 | Test Acc: 0.7560
-★ 最高記録更新！保存しました (Acc: 0.7560)
-Epoch 6 | Loss: 0.7255 | Train Acc: 0.7990 | Test Acc: 0.7675
-★ 最高記録更新！保存しました (Acc: 0.7675)
-Epoch 7 | Loss: 0.8140 | Train Acc: 0.8320 | Test Acc: 0.7835
-★ 最高記録更新！保存しました (Acc: 0.7835)
-Epoch 8 | Loss: 1.0689 | Train Acc: 0.8335 | Test Acc: 0.7815
-Epoch 9 | Loss: 0.5864 | Train Acc: 0.8530 | Test Acc: 0.8055
-★ 最高記録更新！保存しました (Acc: 0.8055)
-Epoch 10 | Loss: 0.7250 | Train Acc: 0.8550 | Test Acc: 0.7990
-Epoch 11 | Loss: 0.6299 | Train Acc: 0.8550 | Test Acc: 0.7940
-Epoch 12 | Loss: 0.6384 | Train Acc: 0.8840 | Test Acc: 0.8170
-★ 最高記録更新！保存しました (Acc: 0.8170)
-Epoch 13 | Loss: 0.4919 | Train Acc: 0.8940 | Test Acc: 0.8300
-★ 最高記録更新！保存しました (Acc: 0.8300)
-Epoch 14 | Loss: 0.5591 | Train Acc: 0.9015 | Test Acc: 0.8265
+Epoch 2 | Loss: 1.3791 | Train Acc: 0.7650 | Test Acc: 0.7260
+★ 最高記録更新！保存しました (Acc: 0.7260)
+Epoch 3 | Loss: 1.0341 | Train Acc: 0.7575 | Test Acc: 0.7275
+★ 最高記録更新！保存しました (Acc: 0.7275)
+Epoch 4 | Loss: 1.0483 | Train Acc: 0.8170 | Test Acc: 0.7855
+★ 最高記録更新！保存しました (Acc: 0.7855)
+Epoch 5 | Loss: 0.7607 | Train Acc: 0.8595 | Test Acc: 0.8165
+★ 最高記録更新！保存しました (Acc: 0.8165)
+Epoch 6 | Loss: 0.6856 | Train Acc: 0.8325 | Test Acc: 0.7940
+Epoch 7 | Loss: 0.8566 | Train Acc: 0.8545 | Test Acc: 0.8145
+Epoch 8 | Loss: 0.6166 | Train Acc: 0.8855 | Test Acc: 0.8320
+★ 最高記録更新！保存しました (Acc: 0.8320)
+Epoch 9 | Loss: 0.5649 | Train Acc: 0.8965 | Test Acc: 0.8330
+★ 最高記録更新！保存しました (Acc: 0.8330)
+Epoch 10 | Loss: 0.5290 | Train Acc: 0.9055 | Test Acc: 0.8380
+★ 最高記録更新！保存しました (Acc: 0.8380)
+学習率変更
+Epoch 11 | Loss: 0.6580 | Train Acc: 0.9300 | Test Acc: 0.8645
+★ 最高記録更新！保存しました (Acc: 0.8645)
+Epoch 12 | Loss: 0.4701 | Train Acc: 0.9340 | Test Acc: 0.8650
+★ 最高記録更新！保存しました (Acc: 0.8650)
+Epoch 13 | Loss: 0.6296 | Train Acc: 0.9280 | Test Acc: 0.8550
+Epoch 14 | Loss: 0.5928 | Train Acc: 0.9385 | Test Acc: 0.8705
+★ 最高記録更新！保存しました (Acc: 0.8705)
+Epoch 15 | Loss: 0.5175 | Train Acc: 0.9385 | Test Acc: 0.8565
+Epoch 16 | Loss: 0.4906 | Train Acc: 0.9445 | Test Acc: 0.8725
+★ 最高記録更新！保存しました (Acc: 0.8725)
 
-★ 学習率を下げました！ (LR: 0.02 -> 0.0010) 
-
-Epoch 15 | Loss: 0.4741 | Train Acc: 0.9050 | Test Acc: 0.8370
-★ 最高記録更新！保存しました (Acc: 0.8370)
-Epoch 16 | Loss: 0.4597 | Train Acc: 0.9110 | Test Acc: 0.8340
-Epoch 17 | Loss: 0.4180 | Train Acc: 0.9140 | Test Acc: 0.8345
-Epoch 18 | Loss: 0.5751 | Train Acc: 0.9125 | Test Acc: 0.8400
-★ 最高記録更新！保存しました (Acc: 0.8400)
-Epoch 19 | Loss: 0.4012 | Train Acc: 0.9125 | Test Acc: 0.8365
-Epoch 20 | Loss: 0.5566 | Train Acc: 0.9025 | Test Acc: 0.8300
 """
+
+
+
