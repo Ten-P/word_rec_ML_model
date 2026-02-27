@@ -150,6 +150,9 @@ Epoch 15 | Loss: 0.5175 | Train Acc: 0.9385 | Test Acc: 0.8565
 Epoch 16 | Loss: 0.4906 | Train Acc: 0.9445 | Test Acc: 0.8725
 ★ 最高記録更新！保存しました (Acc: 0.8725)
 
+
+
+
 """
 
 
