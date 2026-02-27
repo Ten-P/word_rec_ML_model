@@ -24,7 +24,7 @@ network = CNN(
 
 
 network.load_params("best_params.pkl")
-print("学習済みパラメータを読み込みました。")
+print("学習済みパラメータを読み込み。")
 sum = []
 for _ in range(1000):
     ls = []

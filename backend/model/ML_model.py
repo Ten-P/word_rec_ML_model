@@ -10,15 +10,11 @@ print(softmax(np.array([2,3])))
 
 
 
-#===============================================
-#
+
 #  input_dim: 入力データの（チャンネル、高さ、幅）
 #  conv_param:　畳み込み層のハイパーパラメータ
 #  hidden_size:　
 #  output_size:　出力層のニューロンの数
-#  weight_init_std: 初期化の際の重みの標準偏差
-#
-#================================================
 
 
 
@@ -29,20 +25,18 @@ class CNN:
                  hidden_size=100, output_size=35):
         
         
-        # 1層目のパラメータを取り出す
+       
         fn1 = conv_param['filter_num']
         fs1 = conv_param['filter_size']
         p1 = conv_param['pad']
         s1 = conv_param['stride']
         
-        # 2層目のパラメータを取り出す
+        
         fn2 = conv_param_2['filter_num']
         fs2 = conv_param_2['filter_size']
         p2 = conv_param_2['pad']
         s2 = conv_param_2['stride']
 
-        # 出力サイズの計算 (Poolを2回通すのでサイズは 1/4 になると仮定)
-        # 最終的な特徴マップのサイズ（固定値で計算）
         final_h = 32
         final_w = 8
         pool_output_size = int(fn2 * final_h * final_w)
@@ -108,7 +102,6 @@ class CNN:
 
     def predict(self, x, train_flg=False):
         for key, layer in self.layers.items():
-            # BatchNormalization または Dropout の場合、フラグを渡す
             if "BN" in key or "Dropout" in key:
                 x = layer.forward(x, train_flg)
             else:
@@ -128,7 +121,6 @@ class CNN:
         for i in range(int(x.shape[0] / batch_size)):
             tx = x[i*batch_size:(i+1)*batch_size]
             tt = t[i*batch_size:(i+1)*batch_size]
-            # 精度測定は必ず train_flg=False
             y = self.predict(tx, train_flg=False)
             y = np.argmax(y, axis=1)
             acc += np.sum(y == tt) 
@@ -136,7 +128,6 @@ class CNN:
         return acc / x.shape[0]
 
     def numerical_gradient(self, x, t):
-        # 修正: 数値微分の際も学習モード(True)でロスを計算する
         loss_w = lambda w: self.loss(x, t, train_flg=True)
 
         grads = {}
@@ -144,7 +135,6 @@ class CNN:
             grads['W' + str(idx)] = numerical_gradient(loss_w, self.params['W' + str(idx)])
             grads['b' + str(idx)] = numerical_gradient(loss_w, self.params['b' + str(idx)])
             
-            # gamma, beta のチェックも追加
             if 'gamma' + str(idx) in self.params:
                 grads['gamma' + str(idx)] = numerical_gradient(loss_w, self.params['gamma' + str(idx)])
                 grads['beta' + str(idx)] = numerical_gradient(loss_w, self.params['beta' + str(idx)])
@@ -167,7 +157,6 @@ class CNN:
             dout = layer.backward(dout)
 
 
-        # 勾配の回収
         grads = {}
         grads['W1'], grads['b1'] = self.layers['Conv1'].dW, self.layers['Conv1'].db
         grads['gamma1'], grads['beta1'] = self.layers['BN1'].dgamma, self.layers['BN1'].dbeta
@@ -182,7 +171,7 @@ class CNN:
 
         return grads
     
-    # ファイルにパラメータを書き込む
+
     def save_params(self, file_name="params.pkl"):
         params = {}
         
@@ -190,8 +179,7 @@ class CNN:
         for key, val in self.params.items():
             params[key] = val
             
-        # 2. BatchNormalizationの「平均(running_mean)」と「分散(running_var)」も保存
-        # これがないと推論時(train_flg=False)に正しく計算できません
+        # 2. BatchNormalizationの平均と分散を保存
         params['bn_mean'] = {}
         params['bn_var'] = {}
         
@@ -207,13 +195,11 @@ class CNN:
         with open(file_name, 'rb') as f:
             params = pickle.load(f)
             
-        # 1. self.params を更新
         for key, val in params.items():
-            # bn_mean, bn_var は self.params ではないので除外して読み込む
             if key not in ['bn_mean', 'bn_var']:
                 self.params[key] = val
 
-        # 2. レイヤへの重み反映 (既存のコード)
+
         # Conv1
         self.layers['Conv1'].W = self.params['W1']
         self.layers['Conv1'].b = self.params['b1']
@@ -236,7 +222,7 @@ class CNN:
         self.layers['Affine2'].W = self.params['W4']
         self.layers['Affine2'].b = self.params['b4']
         
-        # 3. BatchNormalizationの「平均」と「分散」を復元する (★ここが重要)
+        
         if 'bn_mean' in params and 'bn_var' in params:
             for key, layer in self.layers.items():
                 if "BN" in key:
