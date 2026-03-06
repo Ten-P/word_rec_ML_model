@@ -23,3 +23,5 @@ data/
 *.npz
 *.tar.gz
 *.pkl
+*.pt
+*pth
