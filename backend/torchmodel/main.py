@@ -26,7 +26,7 @@ full_dataset = TensorDataset(x, t)
 print(full_dataset.tensors[0].shape)
 
 
-# --- 推論（テスト）フェーズ ---
+# 推論（テスト）フェーズ
 
 # 1. データローダーを作成（1個ずつ取り出す設定）
 test_loader = DataLoader(full_dataset, batch_size=1, shuffle=False)
@@ -34,7 +34,7 @@ test_loader = DataLoader(full_dataset, batch_size=1, shuffle=False)
 # 正解数をカウントする変数
 correct = 0
 
-# 勾配計算をオフにする（メモリ節約と高速化）
+# 勾配計算をオフにする
 with torch.no_grad():
     for data, target in test_loader:
         # データをデバイス（CPU/GPU）に送る
@@ -54,7 +54,7 @@ with torch.no_grad():
         # 最初の数件だけ中身を表示してみる
         print(f"正解: {classes[target.item()]} | 予測: {classes[prediction.item()]}")
 
-# 2. 全体の正解率を表示
+# 全体の正解率を表示
 accuracy = 100. * correct / len(full_dataset)
 print(f"\nテスト完了！ 正解率: {accuracy:.2f}%")
 

@@ -17,7 +17,7 @@ test_size = len(full_dataset) - train_size
 train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])#それぞれi番目のタプルについて８割は学習用、残りはテスト用にわけられる。
 
 
-# # 3. ハイパーパラメータ
+#ハイパーパラメータ
 batch_size = 32
 learning_rate = 0.01
 iters_num = 200000
@@ -38,7 +38,7 @@ model = CNN(output_size=len(classes)).to(device)
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
 
-print(f"--- 学習開始 (Device={device}) ---")
+print(f"学習開始 (Device={device})")
 
 # ====================================================
 # 4. 学習ループ
@@ -115,7 +115,6 @@ while iters_counter < iters_num:
                 #state_dictの中身はOrderedDict
                 torch.save(model.state_dict(), "best_model.pth")
                 print(">> 最高記録更新（全件評価）・モデル保存")
-            
 
         iters_counter += 1
 """       

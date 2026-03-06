@@ -3,3 +3,7 @@ uvicorn
 pandas
 librosa
 matplotlib
+torch
+torchvision
+torchaudio
+tqdm

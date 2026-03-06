@@ -1,5 +1,6 @@
 # Ubuntu 24.04 をベースに指定
-FROM ubuntu:24.04
+# 修正例
+FROM nvidia/cuda:12.6.3-base-ubuntu24.04
 
 # 環境変数でインタラクティブな入力を無効化（インストール中の停止を防ぐ）
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,3 +30,10 @@ COPY . .
 
 # FastAPIを起動
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+#docker run -d -p 8000:8000 --gpus all --name my-ml-container word-rec-app
+#コンテナの情報まとめ
+#名前: my-ml-container
+
+#コンテナID: 69f740c3119f... （IDの先頭数文字でも操作可能です）
+
+#イメージ名: word-rec-app
