@@ -4,11 +4,13 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 from model import CNN
 import torch.nn as nn
 import numpy as np
+
+
 # 1. 保存したデータの読み込み
-checkpoint = torch.load("/app/torchmodel/processed_audio_data.pt")
-x = checkpoint['x']         # (N, 1, 128, 32)
-t = checkpoint['t']         # (N,)
-classes = checkpoint['classes'] #x, tは (N,1,128,32), (N,)のテンソル
+data_dict = torch.load("/app/torchmodel/processed_audio_data.pt")
+x = data_dict['x']         # (N, 1, 128, 32)
+t = data_dict['t']         # (N,)
+classes = data_dict['classes'] #x, tは (N,1,128,32), (N,)のテンソル
 
 # 2. データセットの作成と分割
 full_dataset = TensorDataset(x, t) #zipのようなもの
@@ -51,7 +53,8 @@ while iters_counter < iters_num:
     model.train()
     
     for x_batch, t_batch in train_loader:
-        if iters_counter >= iters_num: break
+        if iters_counter >= iters_num: 
+            break
         
         if iters_counter == 10000:
             for param_group in optimizer.param_groups:
@@ -113,7 +116,7 @@ while iters_counter < iters_num:
             if test_acc > best_acc:
                 best_acc = test_acc
                 #state_dictの中身はOrderedDict
-                torch.save(model.state_dict(), "best_model.pth")
+                torch.save(model.state_dict(), "best_saved_prms.pth")
                 print(">> 最高記録更新（全件評価）・モデル保存")
 
         iters_counter += 1

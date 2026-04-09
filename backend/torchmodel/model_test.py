@@ -5,15 +5,9 @@ from model import CNN
 import torch.nn as nn
 import numpy as np
 
-
+torch.serialization.add_safe_globals([CNN])
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = CNN().to(device)
-
-state_dict = torch.load("best_model.pth", map_location=torch.device('cpu'))
-
-model.load_state_dict(state_dict)
-
-model.eval()
+model = torch.load("trained_model.pth", map_location=device, weights_only=False)
 
 
 
@@ -28,7 +22,7 @@ print(full_dataset.tensors[0].shape)
 
 # 推論（テスト）フェーズ
 
-# 1. データローダーを作成（1個ずつ取り出す設定）
+# データローダーを作成（1個ずつ取り出す設定）
 test_loader = DataLoader(full_dataset, batch_size=1, shuffle=False)
 
 # 正解数をカウントする変数
@@ -51,7 +45,7 @@ with torch.no_grad():
         # 予測が当たっているか確認
         correct += prediction.eq(target.view_as(prediction)).sum().item()
 
-        # 最初の数件だけ中身を表示してみる
+        #最初の数件だけ中身を表示してみる
         print(f"正解: {classes[target.item()]} | 予測: {classes[prediction.item()]}")
 
 # 全体の正解率を表示

@@ -46,4 +46,4 @@ class CNN(nn.Module):
         x = self.dropout1(x)
         x = self.affine2(x)
         
-        return x # Softmaxは通常、外側のLoss（CrossEntropyLoss）で計算されるのでここでは不要
+        return x 

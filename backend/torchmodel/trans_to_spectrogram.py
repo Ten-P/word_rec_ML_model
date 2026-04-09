@@ -6,7 +6,7 @@ import librosa
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-
+import json
 
 DATASET_PATH = "/app/dataset" 
 SR = 16000
@@ -69,35 +69,6 @@ class CustomAudioDataset(Dataset):
 
 
 
-full_dataset = CustomAudioDataset(DATASET_PATH)
-
-#学習用とテスト用に分割 (8:2)
-train_size = int(0.8 * len(full_dataset))
-test_size = len(full_dataset) - train_size
-train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
-
-#ベルトコンベア（DataLoader）の作成
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-
-
-print(f"全データ数: {len(full_dataset)}")
-print(f"クラス一覧: {full_dataset.classes}")
-
-#ここで初めてテンソルになる
-for images, labels in train_loader:
-    print(f"バッチ内のデータの形: {images.shape}") # (32, 1, 128, 32)
-    print(f"バッチ内のラベル: {labels}")
-    break
-
-
-
-
-
-
-
-
-
 
 def save_preprocessed_data():
     dataset = CustomAudioDataset(DATASET_PATH)
@@ -105,27 +76,19 @@ def save_preprocessed_data():
     all_features = []
     all_labels = []
 
-    print(f"変換開始... (全 {len(dataset)} ファイル)")
-    
-    # --- 1. ループの中でしっかりデータを集める ---
     for i in range(len(dataset)):
-        # ここで実際に音声を読み込んで変換する
         data, label = dataset[i]
         all_features.append(data)
         all_labels.append(label)
+        
+        if i % 50 == 0:  # 50件ごとに進捗を表示
+            print(f"現在 {i} 件目を処理中... (全体: {len(dataset)}件)")
 
-        if i % 1000 == 0: # 100件だと表示が多すぎるので1000にしました
-            print(f"変換中: {i}/{len(dataset)}")
-
-    # --- 2. 【重要】ここから下のインデントを左に寄せる（ループの外へ！） ---
-    print(f"全データの変換完了。テンソルにまとめます（ここが少し重いです）...")
-    
-    # リストを1つの大きなテンソルにまとめる
+    #リストから一つのテンソルに
     x_tensor = torch.stack(all_features)
     t_tensor = torch.stack(all_labels)
 
-    # まとめて保存
-    save_path = "processed_audio_data.pt"
+    save_path = "/app/torchmodel/processed_audio_data.pt"
     torch.save({
         'x': x_tensor,
         't': t_tensor,
@@ -134,6 +97,12 @@ def save_preprocessed_data():
 
     print(f"保存完了！ ファイル名: {save_path}")
     print(f"データの形: {x_tensor.shape}")
+    
+    
+    json_path = "/app/torchmodel/classes.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(dataset.classes, f, ensure_ascii=False)
+    print(f"クラス名の軽量ファイルを作成しました！ ファイル名: {json_path}")
 
 if __name__ == "__main__":
     save_preprocessed_data()
