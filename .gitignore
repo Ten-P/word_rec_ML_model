@@ -20,3 +20,9 @@ backend/model/*.h5
 data/
 *.wav
 *.png
+frontend/src/app/api/transcri/*
+!frontend/src/app/api/transcri/route.ts
+
+# AI Agent instructions
+AGENTS.md
+CLAUDE.md
