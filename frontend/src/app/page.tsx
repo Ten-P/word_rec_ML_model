@@ -1,15 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
+type InferenceResult = {
+  filename: string;
+  top_result: { label: string; prob: string };
+  other_candidates: { label: string; prob: string }[];
+  message: string;
+};
 
 export default function Page() {
   const [isSupported, setIsSupported] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder>();
   const [stopped, setStopped] = useState(false);
-  const [chunks, setChunks] = useState<BlobPart[]>([]);
+  const chunksRef = useRef<BlobPart[]>([]);
   const [audioURL, setAudioURL] = useState<string>();
   const [isRecording, setIsRecording] = useState(false);
   const [clipName, setClipName] = useState<string>();
   const [blob, setBlob] = useState<Blob>();
+  const [result, setResult] = useState<InferenceResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  
 
   
   useEffect(() => {
@@ -19,8 +30,44 @@ export default function Page() {
         const rec = new MediaRecorder(stream);
         setMediaRecorder(rec);
 
-        rec.ondataavailable = async (e: BlobEvent) => {
-          setChunks((prev) => [...prev, e.data]);
+        rec.ondataavailable = (e: BlobEvent) => {
+          chunksRef.current.push(e.data);
+        };
+
+        rec.onstop = async () => {
+          if (chunksRef.current.length === 0) return;
+
+          const name = prompt(
+            "Enter a name for your sound clip?",
+            "My unnamed clip"
+          );
+          const resolvedName = name ?? "My unnamed clip";
+          setClipName(resolvedName);
+
+          const blob = new Blob(chunksRef.current, { type: rec.mimeType });
+          const audioURL = window.URL.createObjectURL(blob);
+          setBlob(blob);
+          setAudioURL(audioURL);
+          console.log("recorder stopped");
+
+          const formData = new FormData();
+          formData.append("audio", blob, "recording.webm");
+          formData.append("name", resolvedName);
+
+          setIsLoading(true);
+          setResult(null);
+          try {
+            const res = await fetch("api/transcri", {
+              method: "POST",
+              body: formData,
+            });
+            const result = await res.json() as InferenceResult;
+            setResult(result);
+          } finally {
+            setIsLoading(false);
+          }
+
+          chunksRef.current = [];
         };
       },
       () => {
@@ -41,43 +88,6 @@ export default function Page() {
     setStopped(true);
     setIsRecording(false);
   }
-
-  useEffect(() => {
-    if (stopped && chunks.length > 0) {
-      onDataAvailable();
-    }
-  }, [chunks]);
-
-  async function onDataAvailable()  {
-    const clipName = prompt(
-      "Enter a name for your sound clip?",
-      "My unnamed clip"
-    );
-
-    if (clipName === null) {
-      setClipName("My unnamed clip");
-    } else {
-      setClipName(clipName);
-    }
-
-    const blob = new Blob(chunks, { type: mediaRecorder?.mimeType });
-
-    const audioURL = window.URL.createObjectURL(blob);
-    setBlob(blob);
-    setAudioURL(audioURL);
-    console.log("recorder stopped");
-
-    const formData = new FormData();
-    const resolveddName = clipName ?? "My unnamed clip"
-    formData.append("audio", blob!, "recording.webm");
-    formData.append("name", resolveddName);
-    
-    await fetch("api/transcri", {
-      method: "POST",
-      body: formData
-    });
-
-  };
 
   return (
     <div>
@@ -109,7 +119,28 @@ export default function Page() {
           ) : (
             <></>
           )}
-        </section>
+        </section>   {/* ← sound-clipsのsectionの閉じタグ */}
+
+        {/* ローディング中メッセージ */}
+        {isLoading && (
+          <section>
+            <p>推論中です。しばらくお待ちください...</p>
+          </section>
+        )}
+
+        {/* 推論結果の表示 */}
+        {!isLoading && result && (
+          <section>
+            <p>{result.message}</p>
+            <p>他の候補:</p>
+            <ul>
+              {result.other_candidates.map((c) => (
+                <li key={c.label}>{c.label}: {c.prob}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
       </div>
     </div>
   );

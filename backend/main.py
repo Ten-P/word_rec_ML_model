@@ -19,6 +19,9 @@ app = FastAPI()
 
 import json
 
+import tempfile
+import subprocess
+
 # 軽いJSONファイルだけを読み込む
 with open("/app/torchmodel/classes.json", "r", encoding="utf-8") as f:
     CLASS_NAMES = json.load(f)
@@ -29,6 +32,24 @@ N_MELS = 128
 TARGET_WIDTH = 32 
 MODEL_PATH = "torchmodel/trained_model.pth"
 
+
+# webmファイルをwavファイルに変換する関数
+def convert_webm_to_wav(webm_bytes: bytes) -> bytes:
+    """
+    webmファイルのバイト列をwavファイルのバイト列に変換して返す
+    """
+    with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as webm_tmp, \
+         tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as wav_tmp:
+        webm_tmp.write(webm_bytes)
+        webm_tmp.flush()
+        # ffmpegでwebm→wav変換
+        cmd = [
+            "ffmpeg", "-y", "-i", webm_tmp.name,
+            "-ar", str(SR), "-ac", "1", wav_tmp.name
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        wav_tmp.seek(0)
+        return wav_tmp.read()
 
 
 # モデルロード
@@ -64,7 +85,7 @@ def preprocess_audio(file_bytes: bytes):
 
 @app.post("/upload-audio")
 async def upload_audio(file: UploadFile = File(...)):
-    content = await file.read()
+    content = await convert_webm_to_wav(file.read())
     input_tensor = preprocess_audio(content)
     
     with torch.no_grad():

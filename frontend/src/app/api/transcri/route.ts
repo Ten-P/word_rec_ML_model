@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("audio") as File; 
-  const name = formData.get("name") as string;
 
-  const safeName = path.basename(name).replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+  // バックエンドに転送
+  const backendForm = new FormData();
+  backendForm.append("file", file, "recording.webm");
 
-  const buffer = Buffer.from(await file.arrayBuffer()); // File → Buffer
+  const response = await fetch("http://localhost:8000/upload-audio", {
+    method: "POST",
+    body: backendForm,
+  })
 
-  const savePath = path.join(process.cwd(), "src/app/api/transcri", safeName + ".webm");
-  await writeFile(savePath, buffer);
-
-  return NextResponse.json({ saved: savePath });
+  const result = await response.json();
+  return NextResponse.json(result);
 }
