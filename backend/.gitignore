@@ -26,3 +26,10 @@ frontend/src/app/api/transcri/*
 # AI Agent instructions
 AGENTS.md
 CLAUDE.md
+
+# ML model / dataset archives
+*.npz
+*.tar.gz
+*.pkl
+*.pt
+*pth
