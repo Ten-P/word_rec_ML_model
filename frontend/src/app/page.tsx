@@ -3,6 +3,12 @@ import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { RecordControls } from "@/components/RecordControls";
 import { WaveformVisualizer } from "@/components/WaveformVisualizer";
 
+const RECOGNIZABLE_WORDS = [
+  "Yes", "No", "Up", "Down", "Left", "Right", "On", "Off", "Stop", "Go",
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+  "Bed", "Bird", "Cat", "Dog", "Happy", "House", "Marvin", "Sheila", "Tree", "Wow",
+];
+
 export default function Page() {
   const {
     isRecording,
@@ -14,7 +20,7 @@ export default function Page() {
   } = useAudioRecorder();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center gap-8">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center gap-8 py-12">
       <header className="text-center">
         <h1 className="text-4xl font-bold tracking-widest text-indigo-400">
           Word Rec ML
@@ -44,6 +50,23 @@ export default function Page() {
           推論中です。しばらくお待ちください...
         </p>
       )}
+
+      {/* 認識できる単語リスト */}
+      <section className="w-full max-w-md px-4">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 text-center">
+          認識できる単語
+        </h2>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {RECOGNIZABLE_WORDS.map((word) => (
+            <span
+              key={word}
+              className="px-3 py-1 rounded-full bg-gray-800 text-gray-300 text-sm"
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
